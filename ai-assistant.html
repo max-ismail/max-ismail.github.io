@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>MAX - তোমার AI Assistant</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Tiro+Bangla&family=Space+Mono:wght@400;700&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c28;
+    --accent: #00f5a0;
+    --accent2: #00d9f5;
+    --danger: #ff4757;
+    --warning: #ffa502;
+    --text: #e8e8f0;
+    --muted: #6b6b8a;
+    --border: #2a2a3d;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Tiro Bangla', serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    max-width: 480px;
+    margin: 0 auto;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0,245,160,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,160,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Header */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10,10,15,0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(0,245,160,0.3); }
+    50% { box-shadow: 0 0 25px rgba(0,245,160,0.6); }
+  }
+
+  .logo-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 2px;
+  }
+
+  .logo-sub {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+  }
+
+  .alert-badge {
+    background: var(--danger);
+    color: white;
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    padding: 4px 8px;
+    border-radius: 20px;
+    animation: blink 1.5s ease-in-out infinite;
+    cursor: pointer;
+    display: none;
+  }
+
+  .alert-badge.show { display: block; }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* Alert Banner */
+  .alert-banner {
+    background: linear-gradient(135deg, rgba(255,71,87,0.15), rgba(255,71,87,0.05));
+    border: 1px solid rgba(255,71,87,0.4);
+    border-radius: 12px;
+    margin: 12px 16px;
+    padding: 14px;
+    display: none;
+    animation: slideIn 0.3s ease;
+  }
+
+  .alert-banner.show { display: block; }
+
+  @keyframes slideIn {
+    from { transform: translateY(-10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .alert-title {
+    color: var(--danger);
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .alert-msg {
+    font-size: 13px;
+    color: #ffb3b8;
+    line-height: 1.5;
+  }
+
+  .alert-close {
+    float: right;
+    background: none;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: -2px;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 8px;
+    padding: 10px 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .stats-bar::-webkit-scrollbar { display: none; }
+
+  .stat-chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .stat-chip .val { color: var(--accent); font-weight: 700; }
+  .stat-chip.warn .val { color: var(--warning); }
+  .stat-chip.danger .val { color: var(--danger); }
+
+  /* Quick actions */
+  .quick-actions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding: 0 16px 12px;
+  }
+
+  .qa-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 6px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .qa-btn:hover, .qa-btn.active {
+    border-color: var(--accent);
+    background: rgba(0,245,160,0.05);
+    transform: translateY(-2px);
+  }
+
+  .qa-btn .icon { font-size: 20px; }
+  .qa-btn .label {
+    font-size: 9px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* Chat area */
+  .chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .msg {
+    max-width: 85%;
+    animation: msgIn 0.3s ease;
+  }
+
+  @keyframes msgIn {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .msg.user { align-self: flex-end; }
+  .msg.bot { align-self: flex-start; }
+
+  .msg-bubble {
+    padding: 12px 14px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .msg.user .msg-bubble {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #000;
+    border-bottom-right-radius: 4px;
+    font-weight: 500;
+  }
+
+  .msg.bot .msg-bubble {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-bottom-left-radius: 4px;
+  }
+
+  .msg-time {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 4px;
+    font-family: 'Space Mono', monospace;
+    padding: 0 4px;
+  }
+
+  .msg.user .msg-time { text-align: right; }
+
+  /* Typing indicator */
+  .typing {
+    display: none;
+    align-self: flex-start;
+  }
+
+  .typing.show { display: flex; }
+
+  .typing-bubble {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    border-bottom-left-radius: 4px;
+    padding: 14px 18px;
+    display: flex;
+    gap: 5px;
+    align-items: center;
+  }
+
+  .typing-dot {
+    width: 7px;
+    height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: bounce 1.2s ease-in-out infinite;
+  }
+
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-8px); opacity: 1; }
+  }
+
+  /* Voice button */
+  .voice-section {
+    padding: 8px 16px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .voice-btn {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    cursor: pointer;
+    font-size: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 0 20px rgba(0,245,160,0.3);
+  }
+
+  .voice-btn:active { transform: scale(0.92); }
+  .voice-btn.listening {
+    animation: voice-pulse 1s ease-in-out infinite;
+    background: linear-gradient(135deg, var(--danger), #ff6b81);
+  }
+
+  @keyframes voice-pulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(255,71,87,0.4); transform: scale(1); }
+    50% { box-shadow: 0 0 40px rgba(255,71,87,0.7); transform: scale(1.05); }
+  }
+
+  .voice-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 6px;
+    text-align: center;
+  }
+
+  /* Input area */
+  .input-area {
+    padding: 12px 16px 20px;
+    background: rgba(10,10,15,0.95);
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+  }
+
+  .input-wrap {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    transition: border-color 0.2s;
+  }
+
+  .input-wrap:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(0,245,160,0.1);
+  }
+
+  #userInput {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-family: 'Tiro Bangla', serif;
+    font-size: 14px;
+    outline: none;
+    resize: none;
+    max-height: 100px;
+    line-height: 1.4;
+  }
+
+  #userInput::placeholder { color: var(--muted); }
+
+  .send-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .send-btn:active { transform: scale(0.9); }
+
+  /* Mode panels */
+  .mode-panel {
+    display: none;
+    padding: 12px 16px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .mode-panel.show { display: block; }
+
+  .mode-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+
+  .study-topics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .topic-chip {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .topic-chip:hover {
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+
+  /* Screen time tracker */
+  .screen-tracker {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin: 0 16px 12px;
+    padding: 14px;
+  }
+
+  .tracker-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+
+  .progress-bar {
+    background: var(--surface2);
+    border-radius: 10px;
+    height: 8px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 10px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 1s ease;
+  }
+
+  .progress-fill.warn { background: linear-gradient(90deg, var(--warning), #ff6b00); }
+  .progress-fill.danger { background: linear-gradient(90deg, var(--danger), #ff6b81); }
+
+  .tracker-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    color: var(--muted);
+  }
+
+  .tracker-info span:last-child { color: var(--accent); }
+
+  /* Welcome message */
+  .welcome {
+    text-align: center;
+    padding: 20px 16px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.8;
+  }
+
+  .welcome-icon { font-size: 40px; margin-bottom: 10px; }
+  .welcome h3 { color: var(--text); font-size: 16px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">🤖</div>
+    <div>
+      <div class="logo-text">MAX</div>
+      <div class="logo-sub">তোমার স্মার্ট সহকারী</div>
+    </div>
+  </div>
+  <div class="alert-badge" id="alertBadge" onclick="toggleAlert()">⚠️ ALERT</div>
+</div>
+
+<!-- Alert Banner -->
+<div class="alert-banner" id="alertBanner">
+  <div class="alert-title">
+    <span>⚠️ সতর্কতা!</span>
+    <button class="alert-close" onclick="closeAlert()">✕</button>
+  </div>
+  <div class="alert-msg" id="alertMsg">তুমি অনেকক্ষণ ধরে মোবাইল ব্যবহার করছ। এখন পড়ালেখায় মনোযোগ দাও! 📚</div>
+</div>
+
+<!-- Screen Time Tracker -->
+<div class="screen-tracker">
+  <div class="tracker-title">📊 স্ক্রিন টাইম ট্র্যাকার</div>
+  <div class="progress-bar">
+    <div class="progress-fill" id="screenProgress" style="width: 15%"></div>
+  </div>
+  <div class="tracker-info">
+    <span>আজকের সময়: <span id="screenTime" style="color:var(--accent)">0 মিনিট</span></span>
+    <span>লিমিট: 60 মিনিট</span>
+  </div>
+</div>
+
+<!-- Stats Bar -->
+<div class="stats-bar">
+  <div class="stat-chip">📱 সেশন <span class="val" id="sessionStat">0 মিনিট</span></div>
+  <div class="stat-chip warn">⚠️ আলার্ট <span class="val warn" id="alertCount">0</span></div>
+  <div class="stat-chip">✅ প্রশ্ন <span class="val" id="questionCount">0</span></div>
+  <div class="stat-chip">📚 পড়া <span class="val" id="studyCount">0</span></div>
+</div>
+
+<!-- Quick Actions -->
+<div class="quick-actions">
+  <div class="qa-btn" onclick="setMode('general')" id="btn-general">
+    <div class="icon">💬</div>
+    <div class="label">সাধারণ</div>
+  </div>
+  <div class="qa-btn" onclick="setMode('study')" id="btn-study">
+    <div class="icon">📚</div>
+    <div class="label">পড়ালেখা</div>
+  </div>
+  <div class="qa-btn" onclick="setMode('alert')" id="btn-alert">
+    <div class="icon">🔔</div>
+    <div class="label">আলার্ট</div>
+  </div>
+  <div class="qa-btn" onclick="setMode('law')" id="btn-law">
+    <div class="icon">⚖️</div>
+    <div class="label">আইন</div>
+  </div>
+  <div class="qa-btn" onclick="setMode('whatsapp')" id="btn-whatsapp">
+    <div class="icon">💬</div>
+    <div class="label">WhatsApp</div>
+  </div>
+  <div class="qa-btn" onclick="setMode('apps')" id="btn-apps">
+    <div class="icon">📱</div>
+    <div class="label">Apps</div>
+  </div>
+  <div class="qa-btn" onclick="setMode('timer')" id="btn-timer">
+    <div class="icon">⏱️</div>
+    <div class="label">টাইমার</div>
+  </div>
+  <div class="qa-btn" onclick="setMode('motivation')" id="btn-motivation">
+    <div class="icon">🔥</div>
+    <div class="label">অনুপ্রেরণা</div>
+  </div>
+</div>
+
+<!-- Study Mode Panel -->
+<div class="mode-panel" id="study-panel">
+  <div class="mode-title">📚 পড়ালেখার বিষয় বেছে নাও</div>
+  <div class="study-topics">
+    <div class="topic-chip" onclick="askTopic('গণিত')">📐 গণিত</div>
+    <div class="topic-chip" onclick="askTopic('পদার্থবিজ্ঞান')">⚛️ পদার্থ</div>
+    <div class="topic-chip" onclick="askTopic('রসায়ন')">🧪 রসায়ন</div>
+    <div class="topic-chip" onclick="askTopic('ইংরেজি')">🔤 ইংরেজি</div>
+    <div class="topic-chip" onclick="askTopic('Engineering')">⚙️ Engineering</div>
+    <div class="topic-chip" onclick="askTopic('বাংলাদেশের ইতিহাস')">🇧🇩 ইতিহাস</div>
+  </div>
+</div>
+
+<!-- Alert Mode Panel -->
+<div class="mode-panel" id="alert-panel">
+  <div class="mode-title">🔔 আলার্ট সেটিংস</div>
+  <div class="study-topics">
+    <div class="topic-chip" onclick="setAlertTime(15)">⏰ ১৫ মিনিট</div>
+    <div class="topic-chip" onclick="setAlertTime(30)">⏰ ৩০ মিনিট</div>
+    <div class="topic-chip" onclick="setAlertTime(60)">⏰ ১ ঘণ্টা</div>
+    <div class="topic-chip" onclick="triggerAlert('খারাপ ভিডিও দেখা বন্ধ করো! মনোযোগ নষ্ট হচ্ছে। 🚫')">🚫 খারাপ ভিডিও আলার্ট</div>
+    <div class="topic-chip" onclick="triggerAlert('পড়ার সময় হয়েছে! মোবাইল রাখো। 📚')">📚 পড়ার আলার্ট</div>
+  </div>
+</div>
+
+<!-- Law Mode Panel -->
+<div class="mode-panel" id="law-panel">
+  <div class="mode-title">⚖️ আইনি তথ্য</div>
+  <div class="study-topics">
+    <div class="topic-chip" onclick="askTopic('বাংলাদেশের মৌলিক অধিকার')">📜 মৌলিক অধিকার</div>
+    <div class="topic-chip" onclick="askTopic('গ্রেফতারে অধিকার')">🔒 গ্রেফতার</div>
+    <div class="topic-chip" onclick="askTopic('আত্মরক্ষার আইন')">🛡️ আত্মরক্ষা</div>
+    <div class="topic-chip" onclick="askTopic('BCS সম্পর্কে')">🏛️ BCS</div>
+  </div>
+</div>
+
+<!-- WhatsApp Panel -->
+<div class="mode-panel" id="whatsapp-panel">
+  <div class="mode-title">💬 WhatsApp Message পাঠাও</div>
+  <div style="display:flex;flex-direction:column;gap:8px;">
+    <input id="waNumber" type="tel" placeholder="নম্বর লিখো (01XXXXXXXXX)" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;outline:none;font-family:'Tiro Bangla',serif;">
+    <textarea id="waMessage" rows="2" placeholder="Message লিখো..." style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;outline:none;resize:none;font-family:'Tiro Bangla',serif;"></textarea>
+    <button onclick="sendWhatsApp()" style="background:linear-gradient(135deg,#25D366,#128C7E);border:none;border-radius:10px;padding:12px;color:white;font-size:14px;cursor:pointer;font-family:'Tiro Bangla',serif;">📤 WhatsApp এ পাঠাও</button>
+    <div style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;">💡 ভয়েসে বলো: "01XXXXXX কে বলো আমি আসছি"</div>
+  </div>
+</div>
+
+<!-- Apps Panel -->
+<div class="mode-panel" id="apps-panel">
+  <div class="mode-title">📱 দ্রুত App খোলো</div>
+  <div class="study-topics">
+    <div class="topic-chip" onclick="openApp('https://wa.me')">💬 WhatsApp</div>
+    <div class="topic-chip" onclick="openApp('https://youtube.com')">▶️ YouTube</div>
+    <div class="topic-chip" onclick="openApp('https://facebook.com')">📘 Facebook</div>
+    <div class="topic-chip" onclick="openApp('https://maps.google.com')">🗺️ Maps</div>
+    <div class="topic-chip" onclick="openApp('https://translate.google.com')">🌐 Translate</div>
+    <div class="topic-chip" onclick="openApp('https://mail.google.com')">📧 Gmail</div>
+    <div class="topic-chip" onclick="openApp('https://classroom.google.com')">🏫 Classroom</div>
+    <div class="topic-chip" onclick="openApp('https://drive.google.com')">☁️ Drive</div>
+  </div>
+</div>
+
+<!-- Timer Panel -->
+<div class="mode-panel" id="timer-panel">
+  <div class="mode-title">⏱️ পড়ার টাইমার</div>
+  <div id="timerDisplay" style="text-align:center;font-family:'Space Mono',monospace;font-size:36px;color:var(--accent);padding:10px 0;letter-spacing:4px;">00:00</div>
+  <div class="study-topics" style="justify-content:center;">
+    <div class="topic-chip" onclick="startTimer(25)">📚 ২৫ মিনিট</div>
+    <div class="topic-chip" onclick="startTimer(45)">📚 ৪৫ মিনিট</div>
+    <div class="topic-chip" onclick="startTimer(60)">📚 ১ ঘণ্টা</div>
+    <div class="topic-chip" onclick="stopTimer()">⏹️ বন্ধ করো</div>
+  </div>
+  <div id="timerStatus" style="text-align:center;font-size:12px;color:var(--muted);margin-top:8px;"></div>
+</div>
+
+<!-- Motivation Panel -->
+<div class="mode-panel" id="motivation-panel">
+  <div class="mode-title">🔥 অনুপ্রেরণা</div>
+  <div class="study-topics">
+    <div class="topic-chip" onclick="showMotivation()">✨ নতুন কোটস</div>
+    <div class="topic-chip" onclick="askTopic('আমাকে অনুপ্রাণিত করো')">💪 AI অনুপ্রেরণা</div>
+    <div class="topic-chip" onclick="askTopic('সফল হওয়ার উপায়')">🏆 সাফল্যের পথ</div>
+    <div class="topic-chip" onclick="askTopic('Engineering student হিসেবে আমার ভবিষ্যৎ কী')">🚀 আমার ভবিষ্যৎ</div>
+  </div>
+  <div id="motivationQuote" style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:10px;font-size:14px;line-height:1.7;display:none;"></div>
+</div>
+
+<!-- Chat Area -->
+<div class="chat-area" id="chatArea">
+  <div class="welcome">
+    <div class="welcome-icon">🤖</div>
+    <h3>আমি MAX — তোমার AI Assistant!</h3>
+    <p>যেকোনো প্রশ্ন করো বাংলায় বা ইংরেজিতে।<br>আমি সবসময় তোমার পাশে আছি! 💚</p>
+  </div>
+</div>
+
+<!-- Typing indicator -->
+<div class="typing" id="typing">
+  <div class="typing-bubble">
+    <div class="typing-dot"></div>
+    <div class="typing-dot"></div>
+    <div class="typing-dot"></div>
+  </div>
+</div>
+
+<!-- Voice Section -->
+<div class="voice-section">
+  <div style="text-align:center">
+    <button class="voice-btn" id="voiceBtn" onclick="toggleVoice()">🎤</button>
+    <div class="voice-label" id="voiceLabel">ভয়েস কমান্ড</div>
+  </div>
+</div>
+
+<!-- Input Area -->
+<div class="input-area">
+  <div class="input-wrap">
+    <textarea id="userInput" rows="1" placeholder="যেকোনো প্রশ্ন লিখো..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+  </div>
+  <button class="send-btn" onclick="sendMessage()">➤</button>
+</div>
+
+<script>
+  // State
+  let currentMode = 'general';
+  let sessionMinutes = 0;
+  let totalScreenMinutes = 0;
+  let alertLimit = 30;
+  let alertCount = 0;
+  let questionCount = 0;
+  let studyCount = 0;
+  let isListening = false;
+  let recognition = null;
+  let conversationHistory = [];
+
+  // Screen time tracker
+  setInterval(() => {
+    sessionMinutes++;
+    totalScreenMinutes++;
+    
+    document.getElementById('sessionStat').textContent = sessionMinutes + ' মিনিট';
+    document.getElementById('screenTime').textContent = totalScreenMinutes + ' মিনিট';
+    
+    const pct = Math.min((totalScreenMinutes / 60) * 100, 100);
+    const fill = document.getElementById('screenProgress');
+    fill.style.width = pct + '%';
+    
+    if (pct > 80) {
+      fill.className = 'progress-fill danger';
+    } else if (pct > 50) {
+      fill.className = 'progress-fill warn';
+    }
+
+    // Auto alert
+    if (totalScreenMinutes > 0 && totalScreenMinutes % alertLimit === 0) {
+      triggerAlert(`তুমি ${totalScreenMinutes} মিনিট ধরে মোবাইল ব্যবহার করছ! এখন বিরতি নাও এবং পড়ালেখায় মনোযোগ দাও। 📚`);
+    }
+  }, 60000);
+
+  function setMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.qa-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.getElementById('btn-' + mode);
+    if (btn) btn.classList.add('active');
+    document.querySelectorAll('.mode-panel').forEach(p => p.classList.remove('show'));
+    if (mode !== 'general') {
+      const panel = document.getElementById(mode + '-panel');
+      if (panel) panel.classList.add('show');
+    }
+  }
+
+  function openApp(url) {
+    window.open(url, '_blank');
+    addBotMessage('✅ App খোলা হচ্ছে...');
+    setMode('general');
+  }
+
+  function sendWhatsApp() {
+    const num = document.getElementById('waNumber').value.replace(/\D/g, '');
+    const msg = document.getElementById('waMessage').value;
+    if (!num) { addBotMessage('❌ নম্বর দাও!'); return; }
+    const fullNum = num.startsWith('880') ? num : '880' + num.replace(/^0/, '');
+    const url = `https://wa.me/${fullNum}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+    addBotMessage(`✅ WhatsApp খোলা হচ্ছে! ${num} কে message পাঠাও।`);
+    setMode('general');
+  }
+
+  // Timer
+  let timerInterval = null;
+  let timerSeconds = 0;
+
+  function startTimer(mins) {
+    stopTimer();
+    timerSeconds = mins * 60;
+    document.getElementById('timerStatus').textContent = `📚 ${mins} মিনিট পড়ার টাইমার চলছে!`;
+    addBotMessage(`⏱️ ${mins} মিনিটের পড়ার টাইমার শুরু! মনোযোগ দিয়ে পড়ো। 📚`);
+    
+    timerInterval = setInterval(() => {
+      timerSeconds--;
+      const m = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+      const s = String(timerSeconds % 60).padStart(2, '0');
+      document.getElementById('timerDisplay').textContent = m + ':' + s;
+      
+      if (timerSeconds <= 0) {
+        stopTimer();
+        triggerAlert('🎉 পড়া শেষ! খুব ভালো করেছ! এখন ৫ মিনিট বিশ্রাম নাও।');
+        addBotMessage('🎉 টাইমার শেষ! তুমি দারুণ করেছ! এখন একটু বিশ্রাম নাও। ☕');
+        if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
+      }
+    }, 1000);
+  }
+
+  function stopTimer() {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+    document.getElementById('timerDisplay').textContent = '00:00';
+    document.getElementById('timerStatus').textContent = '';
+  }
+
+  // Motivation
+  const allQuotes = [
+    "💪 কষ্ট করলে কেষ্ট মেলে — আজকের পরিশ্রমই আগামীর পুরস্কার!",
+    "🔥 তুমি যতটা ভাবো তার চেয়ে অনেক বেশি সক্ষম।",
+    "⭐ প্রতিটি বিশেষজ্ঞ একসময় শিক্ষার্থী ছিল।",
+    "🚀 স্বপ্ন দেখো বড়, কাজ করো কঠোর, সফল হও নিশ্চিত!",
+    "📚 আজকের পড়াশোনাই আগামীর ক্ষমতা।",
+    "🏆 হার মানবে না — প্রতিটি ব্যর্থতা সাফল্যের সিঁড়ি।",
+    "💡 Engineering পড়ছ — তুমি দেশ বদলাতে পারবে!",
+    "🌟 ছোট ছোট পদক্ষেপই বড় লক্ষ্যে পৌঁছে দেয়।"
+  ];
+
+  function showMotivation() {
+    const q = allQuotes[Math.floor(Math.random() * allQuotes.length)];
+    const el = document.getElementById('motivationQuote');
+    el.textContent = q;
+    el.style.display = 'block';
+    addBotMessage('🌟 ' + q);
+  }
+
+  // Smart voice command processor
+  function processVoiceCommand(text) {
+    const lower = text.toLowerCase();
+    
+    // WhatsApp commands
+    const waMatch = text.match(/(\d{10,11})\s*(?:কে|ke)\s*(?:বলো|বল|bolo|bal)\s*(.+)/);
+    if (waMatch) {
+      const num = waMatch[1];
+      const msg = waMatch[2];
+      const fullNum = '880' + num.replace(/^0/, '');
+      window.open(`https://wa.me/${fullNum}?text=${encodeURIComponent(msg)}`, '_blank');
+      addBotMessage(`✅ ${num} কে WhatsApp message পাঠানো হচ্ছে: "${msg}"`);
+      return true;
+    }
+
+    // App open commands
+    if (lower.includes('whatsapp') || lower.includes('হোয়াটসঅ্যাপ')) {
+      openApp('https://wa.me'); return true;
+    }
+    if (lower.includes('youtube') || lower.includes('ইউটিউব')) {
+      openApp('https://youtube.com'); return true;
+    }
+    if (lower.includes('facebook') || lower.includes('ফেসবুক')) {
+      openApp('https://facebook.com'); return true;
+    }
+    if (lower.includes('maps') || lower.includes('ম্যাপ')) {
+      openApp('https://maps.google.com'); return true;
+    }
+
+    // Timer commands
+    if (lower.includes('টাইমার') || lower.includes('timer')) {
+      const numMatch = text.match(/(\d+)/);
+      const mins = numMatch ? parseInt(numMatch[1]) : 25;
+      startTimer(mins);
+      setMode('timer');
+      return true;
+    }
+
+    // Alert commands
+    if (lower.includes('আলার্ট') || lower.includes('alert')) {
+      triggerAlert('🔔 ভয়েস আলার্ট: ' + text);
+      return true;
+    }
+
+    // Motivation
+    if (lower.includes('অনুপ্রেরণা') || lower.includes('motivat')) {
+      showMotivation(); return true;
+    }
+
+    return false; // Not a command, send to AI
+  }
+
+  function setAlertTime(mins) {
+    alertLimit = mins;
+    addBotMessage(`✅ আলার্ট সেট হয়েছে! প্রতি ${mins} মিনিটে তোমাকে সতর্ক করব।`);
+    setMode('general');
+  }
+
+  function triggerAlert(msg) {
+    alertCount++;
+    document.getElementById('alertCount').textContent = alertCount;
+    document.getElementById('alertMsg').textContent = msg;
+    document.getElementById('alertBanner').classList.add('show');
+    document.getElementById('alertBadge').classList.add('show');
+    // Vibrate if supported
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  }
+
+  function toggleAlert() {
+    document.getElementById('alertBanner').classList.toggle('show');
+  }
+
+  function closeAlert() {
+    document.getElementById('alertBanner').classList.remove('show');
+  }
+
+  function askTopic(topic) {
+    document.getElementById('userInput').value = topic + ' সম্পর্কে বিস্তারিত বলো';
+    sendMessage();
+    setMode('general');
+  }
+
+  function getTime() {
+    return new Date().toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function addUserMessage(text) {
+    const chat = document.getElementById('chatArea');
+    const welcome = chat.querySelector('.welcome');
+    if (welcome) welcome.remove();
+
+    const div = document.createElement('div');
+    div.className = 'msg user';
+    div.innerHTML = `
+      <div class="msg-bubble">${text}</div>
+      <div class="msg-time">${getTime()}</div>
+    `;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function addBotMessage(text) {
+    document.getElementById('typing').classList.remove('show');
+    const chat = document.getElementById('chatArea');
+    const div = document.createElement('div');
+    div.className = 'msg bot';
+    div.innerHTML = `
+      <div class="msg-bubble">${text}</div>
+      <div class="msg-time">🤖 MAX • ${getTime()}</div>
+    `;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function showTyping() {
+    const typing = document.getElementById('typing');
+    typing.classList.add('show');
+    document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('userInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    input.value = '';
+    input.style.height = 'auto';
+    questionCount++;
+    document.getElementById('questionCount').textContent = questionCount;
+
+    if (currentMode === 'study') {
+      studyCount++;
+      document.getElementById('studyCount').textContent = studyCount;
+    }
+
+    addUserMessage(text);
+    showTyping();
+
+    // Build system prompt based on mode
+    let systemPrompt = `তোমার নাম MAX। তুমি একটি বাংলাদেশি ছাত্রের AI Assistant। তুমি বাংলায় সহজ ও সংক্ষিপ্তভাবে উত্তর দাও। 
+    ইমোজি ব্যবহার করো। উত্তর মোবাইলে পড়ার উপযোগী রাখো (ছোট ছোট প্যারায়)। নিজেকে MAX নামে পরিচয় দাও।`;
+
+    if (currentMode === 'study') {
+      systemPrompt += ' তুমি একজন শিক্ষক। পড়ালেখায় সাহায্য করো। Engineering বিষয়ে বিশেষ দক্ষতা আছে।';
+    } else if (currentMode === 'law') {
+      systemPrompt += ' তুমি বাংলাদেশের আইন ও সংবিধান বিশেষজ্ঞ। সহজ ভাষায় আইনি তথ্য দাও।';
+    }
+
+    conversationHistory.push({ role: 'user', content: text });
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: systemPrompt,
+          messages: conversationHistory
+        })
+      });
+
+      const data = await response.json();
+      const reply = data.content?.[0]?.text || 'দুঃখিত, উত্তর দিতে পারলাম না।';
+      
+      conversationHistory.push({ role: 'assistant', content: reply });
+      if (conversationHistory.length > 20) conversationHistory = conversationHistory.slice(-20);
+
+      addBotMessage(reply);
+
+      // Speak the reply
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(reply.replace(/[🤖📚⚖️✅⚠️🔔💬]/g, ''));
+        utterance.lang = 'bn-BD';
+        utterance.rate = 0.9;
+        speechSynthesis.speak(utterance);
+      }
+
+    } catch (err) {
+      addBotMessage('❌ সংযোগে সমস্যা হয়েছে। আবার চেষ্টা করো।');
+    }
+  }
+
+  function toggleVoice() {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      addBotMessage('❌ Chrome browser ব্যবহার করো। তারপর ভয়েস কাজ করবে।');
+      return;
+    }
+    if (isListening) { recognition.stop(); return; }
+
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(() => startListening())
+      .catch(() => {
+        addBotMessage('❌ মাইক্রোফোন permission দাও!\n\n👉 Chrome এ 🔒 চাপো → Microphone → Allow → Refresh করো।');
+      });
+  }
+
+  function startListening() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.lang = 'bn-BD';
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    recognition.onstart = () => {
+      isListening = true;
+      document.getElementById('voiceBtn').classList.add('listening');
+      document.getElementById('voiceBtn').textContent = '🔴';
+      document.getElementById('voiceLabel').textContent = 'শুনছি... বলো!';
+      if (navigator.vibrate) navigator.vibrate(100);
+    };
+
+    recognition.onresult = (e) => {
+      let interim = '', final = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) final += e.results[i][0].transcript;
+        else interim += e.results[i][0].transcript;
+      }
+      if (interim) document.getElementById('userInput').value = interim;
+      if (final) {
+        document.getElementById('userInput').value = final;
+        document.getElementById('voiceLabel').textContent = '✅ পেয়েছি!';
+        const handled = processVoiceCommand(final);
+        if (!handled) sendMessage();
+        else document.getElementById('userInput').value = '';
+      }
+    };
+
+    recognition.onend = () => {
+      isListening = false;
+      document.getElementById('voiceBtn').classList.remove('listening');
+      document.getElementById('voiceBtn').textContent = '🎤';
+      document.getElementById('voiceLabel').textContent = 'ভয়েস কমান্ড';
+    };
+
+    recognition.onerror = (e) => {
+      isListening = false;
+      document.getElementById('voiceBtn').classList.remove('listening');
+      document.getElementById('voiceBtn').textContent = '🎤';
+      if (e.error === 'not-allowed') {
+        document.getElementById('voiceLabel').textContent = 'Permission দাও!';
+        addBotMessage('❌ মাইক্রোফোন block!\n✅ Chrome এ 🔒 → Microphone → Allow → Refresh');
+      } else if (e.error === 'no-speech') {
+        document.getElementById('voiceLabel').textContent = 'কিছু শুনিনি, আবার চাপো';
+      } else if (e.error === 'network') {
+        document.getElementById('voiceLabel').textContent = 'Internet লাগবে!';
+      } else {
+        document.getElementById('voiceLabel').textContent = 'আবার চেষ্টা করো';
+      }
+    };
+
+    try { recognition.start(); }
+    catch(e) { addBotMessage('❌ Page refresh করো।'); }
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+  }
+
+  // Init
+  setMode('general');
+
+  setTimeout(() => {
+    addBotMessage('👋 সালাম! আমি MAX — তোমার AI Assistant। যেকোনো প্রশ্ন করো বা ভয়েসে বলো — আমি সাহায্য করব! 💚\n\n💡 টিপস: বলো "WhatsApp এ X কে বলো Y" বা "পড়ার টাইমার দাও"!');
+  }, 1000);
+
+  // Daily motivation
+  const quotes = [
+    "💪 তুমি পারবে! আজকের কষ্ট আগামীর সাফল্য।",
+    "📚 প্রতিদিন একটু একটু করে এগিয়ে যাও।",
+    "🔥 স্বপ্ন দেখো, কাজ করো, সফল হও!",
+    "⭐ তোমার মধ্যে অসাধারণ সম্ভাবনা আছে।",
+    "🚀 আজকের পড়াশোনাই আগামীর ক্ষমতা।"
+  ];
+  setTimeout(() => {
+    const q = quotes[Math.floor(Math.random() * quotes.length)];
+    triggerAlert('🌟 আজকের অনুপ্রেরণা: ' + q);
+  }, 5000);
+</script>
+</body>
+</html>
